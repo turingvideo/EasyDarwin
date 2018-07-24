@@ -5,6 +5,7 @@ const yields = require('@penggy/express-yields');
 const path = require('path');
 const fs = require('fs-extra');
 const http = require('http');
+const https = require('https');
 const utils = require('utils');
 const ip = require('@penggy/internal-ip');
 const events = require('events');
@@ -76,8 +77,16 @@ class HTTPServer extends events.EventEmitter {
             }
             res.status(500).send(e.message);
         }); 
-    
-        this.server = http.createServer(this.app);
+        if(cfg.tls) {
+            const options = {
+                key: cfg.tls.key,
+                cert: cfg.tls.cert
+            };
+            this.server = https.createServer(options, this.app);
+        }
+        else {
+            this.server = http.createServer(this.app);
+        }
         this.server.on("upgrade", (req, socket, head) => {
             const pathname = require('url').parse(req.url).pathname;
             socket.destroy();
@@ -88,7 +97,8 @@ class HTTPServer extends events.EventEmitter {
         this.server.listen(this.port, async () => {
             var host = await ip.v4();
             var env = process.env.NODE_ENV || "development";
-            console.log(`EasyDarwin http server listening on http://${host}:${this.port} in ${env} mode`);
+            var protocol = cfg.tls ? 'https': 'http';
+            console.log(`EasyDarwin http server listening on ${protocol}://${host}:${this.port} in ${env} mode`);
         })
     }
 }

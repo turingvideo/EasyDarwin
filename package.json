@@ -41,8 +41,8 @@
       "web_src"
     ]
   },
-  "repository": {  
-    "type": "git",  
+  "repository": {
+    "type": "git",
     "url": "https://github.com/EasyDarwin/EasyDarwin.git"
   },
   "pack": {

@@ -1,24 +1,42 @@
+const tls = require('tls');
+const fs = require('fs');
 const net = require('net');
 const ip = require('@penggy/internal-ip');
 const RTSPSession = require('rtsp-session');
 const events = require('events');
+const cfg = require('cfg');
 
 class RTSPServer extends events.EventEmitter {
-    
+
     constructor(port = 554) {
         super();
         this.port = port;
         // push sessions : path <-> session
         this.sessions = {};
-        this.server = net.createServer();
-        this.server.on("connection", socket => {
+        var connectName = ''
+        var protocol = ''
+        if(cfg.tls) {
+            connectName = "secureConnection"
+            protocol = 'rtsps'
+            const options = {
+                key: cfg.tls.key,
+                cert: cfg.tls.cert
+            };
+            this.server = tls.createServer(options);
+        }
+        else {
+            connectName = 'connection'
+            protocol = 'rtsp'
+            this.server = net.createServer();
+        }
+        this.server.on(connectName, socket => {
             new RTSPSession(socket, this);
         }).on("error", err => {
             console.error('rtsp server error:', err);
         }).on("listening", async () => {
             var host = await ip.v4();
             var env = process.env.NODE_ENV || "development";
-            console.log(`EasyDarwin rtsp server listening on rtsp://${host}:${this.port} in ${env} mode`);
+            console.log(`EasyDarwin rtsp server listening on ${protocol}://${host}:${this.port} in ${env} mode`);
         })
     }
 
