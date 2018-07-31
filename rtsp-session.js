@@ -32,6 +32,8 @@ class RTSPSession extends event.EventEmitter {
         this.playSessions = {};
         this.transType = 'tcp';
 
+        this.checkConnection = null;
+
         //-- tcp trans params
         this.aRTPChannel = 0;
         this.aRTPControlChannel = 0;
@@ -327,6 +329,7 @@ class RTSPSession extends event.EventEmitter {
                     res.code = 406;
                     res.msg = 'Not Acceptable';
                 }
+                this.checkConnection = setInterval(this.checkNoConnection.bind(this), 30000);
                 break;
             case 'SETUP':
                 var ts = req['Transport'] || "";
@@ -475,6 +478,14 @@ class RTSPSession extends event.EventEmitter {
         this.makeResponseAndSend(res);
     }
 
+    checkNoConnection() {
+        console.log(this.path);
+        if (Object.keys(this.server.sessions[this.path].playSessions).length == 0) {
+            this.stop();
+            clearInterval(this.checkConnection);
+        }
+    }
+ 
     stop() {
         this.bp.stop();
 
