@@ -9,6 +9,7 @@ const sdpParser = require('sdp-transform');
 const getPort = require('get-port');
 const dgram = require('dgram');
 const cfg = require('cfg');
+const crypto = require("crypto");
 
 class RTSPRequest {
     constructor() {
@@ -232,6 +233,65 @@ class RTSPSession extends event.EventEmitter {
         return ret;
     }
 
+    parseQuery(query = '') {
+        var result = {};
+        query.split("&").forEach(function(part) {
+            var item = part.split("=");
+            result[item[0]] = decodeURIComponent(item[1]);
+        });
+        return result;
+    }
+
+    encrypt(key, salt, request) {
+        var hmac = crypto.createHmac("sha512", key);
+        var signing_key = hmac.update(salt).digest();
+        
+        var hmac2 = crypto.createHmac("sha512", signing_key);
+        var signed = hmac2.update(new Buffer(request, 'utf-8')).digest('base64');
+
+        return signed;
+    }
+
+    authenticate(method, cur_url) {
+        var uri = cur_url.split("?");
+        var raw_uri = uri[0];
+        var param_list = uri[1].split("&");
+        var param_uri = param_list[0];
+
+        var params = this.parseQuery(url.parse(cur_url).query)
+
+        var exp_time = params['expires'];
+        var salt = params['salt'];
+        var signature = params['signature'];
+
+        if (!exp_time || !salt || !signature) {
+            return '410';
+        }
+
+        //if curtime > exp_time, return false
+        if (Date.now() > Date.parse(exp_time)) {
+            return '407';
+        }
+
+        //if signature != signature, return false 
+        //var secret_key = "\xe5\x9eG\x16\x0c\x9e\xfd\xd4\xfa[\xd2\x94\x0c\x96(MQ\xb0\x8d\xe95\xaf\x91UW&\xf29,\xab\x89\xd7V5\x99\xaa\x84^\xff\x95\xe0\xeb]J\x97~\xcc8@&\n9S& \x02\xc8W\x9c\xbep\x9fe\xeb";
+
+        var secret_key = new Buffer('e59e47160c9efdd4fa5bd2940c96284d51b08de935af91555726f2392cab89d7563599aa845eff95e0eb5d4a977ecc3840260a3953262002c8579cbe709f65eb', 'hex');
+        var prefix = Buffer.from('TV');
+        var arr = [prefix, secret_key];
+        secret_key = Buffer.concat(arr);
+
+        var request = method + '\n' + raw_uri + '\n' + param_uri;
+        var salt_raw = new Buffer(salt, 'base64');
+
+        if (this.encrypt(secret_key, salt_raw, request) != signature) {
+            return '408';
+        } 
+
+        return '100'
+    }
+
+
     /**
      * 
      * @param {RTSPRequest} req 
@@ -253,7 +313,15 @@ class RTSPSession extends event.EventEmitter {
             case 'ANNOUNCE':
                 this.type = 'pusher';
                 this.url = req.url;
-                this.path = url.parse(this.url).path;
+                this.path = url.parse(this.url).pathname;
+
+                var res_code = this.authenticate(req.method, this.url);
+                if (res_code != '100') {
+                    res.code = res_code;
+                    res.msg = 'Not Acceptable';
+                    break;
+                }
+
                 var pushSession = this.server.sessions[this.path];
                 if (pushSession) {
                     res.code = 406;
@@ -351,7 +419,17 @@ class RTSPSession extends event.EventEmitter {
             case 'DESCRIBE':
                 this.type = 'player';
                 this.url = req.url;
-                this.path = url.parse(this.url).path;
+                this.path = url.parse(this.url).pathname;
+
+           
+                var res_code = this.authenticate(req.method, this.url);
+                if (res_code != '100') {
+                    res.code = res_code;
+                    res.msg = 'Not Acceptable';
+                    break;
+                }
+
+
                 var pushSession = this.server.sessions[this.path];
                 if (pushSession && pushSession.sdpRaw) {
                     res.headers['Content-Length'] = pushSession.sdpRaw.length;

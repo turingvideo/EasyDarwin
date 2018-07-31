@@ -10,8 +10,8 @@ const cfg = {
     wwwDir: path.resolve(__dirname, "www"),
     dataDir: path.resolve(os.homedir(), ".easydarwin"),
     tls: {
-        key: '',
-        cert: ''
+        key: '/home/ubuntu/ssl/turingvideo.key',
+        cert: '/home/ubuntu/ssl/STAR_turingvideo_com.bundle'
     }
 };
 
