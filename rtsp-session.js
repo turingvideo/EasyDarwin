@@ -505,6 +505,7 @@ class RTSPSession extends event.EventEmitter {
         this.vRTPServerSocket && this.vRTPServerSocket.close();
         this.vRTPControlserverSokcet && this.vRTPControlserverSokcet.close();
 
+        this.socket.destroy();
         console.log(`rtsp session[type=${this.type}, path=${this.path}, sid=${this.sid}] end`);
     }
 
