@@ -278,7 +278,11 @@ class RTSPSession extends event.EventEmitter {
         //if signature != signature, return false 
         //var secret_key = "\xe5\x9eG\x16\x0c\x9e\xfd\xd4\xfa[\xd2\x94\x0c\x96(MQ\xb0\x8d\xe95\xaf\x91UW&\xf29,\xab\x89\xd7V5\x99\xaa\x84^\xff\x95\xe0\xeb]J\x97~\xcc8@&\n9S& \x02\xc8W\x9c\xbep\x9fe\xeb";
 
-        var secret_key = new Buffer('e59e47160c9efdd4fa5bd2940c96284d51b08de935af91555726f2392cab89d7563599aa845eff95e0eb5d4a977ecc3840260a3953262002c8579cbe709f65eb', 'hex');
+        var fs = require('fs');
+        var secret_key_buffer = JSON.parse(fs.readFileSync(cfg.secret_key, 'utf8'));
+        var secret_key_hex = secret_key_buffer['STREAM_SECRET_KEY'];
+
+        var secret_key = new Buffer(secret_key_hex, 'hex');
         var prefix = Buffer.from('TV');
         var arr = [prefix, secret_key];
         secret_key = Buffer.concat(arr);

@@ -12,7 +12,8 @@ const cfg = {
     tls: {
         key: '/home/ubuntu/ssl/turingvideo.key',
         cert: '/home/ubuntu/ssl/STAR_turingvideo_com.bundle'
-    }
+    },
+    secret_key: '/home/ubuntu/EasyDarwin/environment.json'
 };
 
 if(cfg.tls) {
