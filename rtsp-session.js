@@ -483,9 +483,12 @@ class RTSPSession extends event.EventEmitter {
     }
 
     checkNoConnection() {
-        console.log(this.path);
-        if (Object.keys(this.server.sessions[this.path].playSessions).length == 0) {
-            this.stop();
+        console.log('checkNoConnection: ' + this.path);
+        var session = this.server.sessions[this.path];
+        if (!session || Object.keys(session.playSessions).length == 0) {
+            if(session) {
+                this.stop();
+            }
             clearInterval(this.checkConnection);
         }
     }
@@ -510,7 +513,7 @@ class RTSPSession extends event.EventEmitter {
         this.vRTPControlserverSokcet && this.vRTPControlserverSokcet.close();
 
         this.socket.destroy();
-        console.log(`rtsp session[type=${this.type}, path=${this.path}, sid=${this.sid}] end`);
+        console.log(`end: rtsp session[type=${this.type}, path=${this.path}, sid=${this.sid}]`);
     }
 
     sendGOPCache() {
