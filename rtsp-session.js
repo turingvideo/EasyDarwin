@@ -24,6 +24,7 @@ class RTSPSession extends event.EventEmitter {
 
     constructor(socket, server) {
         super();
+        this.stopped = false;
         this.type = '';
         this.url = '';
         this.path = '';
@@ -94,9 +95,11 @@ class RTSPSession extends event.EventEmitter {
         }).on("close", () => {
             this.stop();
         }).on("error", err => {
+            this.stopped = true;
             this.socket.destroy();
             logger.error(err);
         }).on("timeout", () => {
+            this.stopped = true;
             this.socket.end();
         })
     }
@@ -483,21 +486,28 @@ class RTSPSession extends event.EventEmitter {
 
     checkNoConnection() {
         var session = this.server.sessions[this.path];
-        var stop = !session || Object.keys(session.playSessions).length == 0;
+        var stop = this.stopped || session != this || Object.keys(session.playSessions).length == 0;
         logger.info('checkNoConnection: path=' + this.path + ', stop=' + stop);
         if (stop) {
-            if(session) {
-                this.stop();
-            }
+            this.stop();
             clearInterval(this.checkConnection);
         }
     }
  
     stop() {
+        if(this.stopped) {
+            return;
+        }
+        this.stopped = true;
+        //
         this.bp.stop();
 
         if(this.type == 'pusher') {
-            delete this.server.sessions[this.path];
+            if(this.server.sessions[this.path] === this) {
+                delete this.server.sessions[this.path];
+            } else {
+                logger.warn(`Concurrency issue occured: path=${this.path}`);
+            }
         } else if(this.type == 'player' && this.pushSession) {
             delete this.pushSession.playSessions[this.sid];
         }
