@@ -10,6 +10,7 @@ const getPort = require('get-port');
 const dgram = require('dgram');
 const cfg = require('cfg');
 const crypto = require("crypto");
+const logger = require('./utils/logger');
 
 class RTSPRequest {
     constructor() {
@@ -94,7 +95,7 @@ class RTSPSession extends event.EventEmitter {
             this.stop();
         }).on("error", err => {
             this.socket.destroy();
-            // console.log(err);
+            logger.error(err);
         }).on("timeout", () => {
             this.socket.end();
         })
@@ -204,8 +205,7 @@ class RTSPSession extends event.EventEmitter {
             raw += `${key}: ${opt.headers[key]}\r\n`;
         }
         raw += `\r\n`;
-        console.log(`>>>>>>>>>>>>> response[${opt.method}] >>>>>>>>>>>>>`);
-        console.log(raw);
+        logger.info(`>>>>>>>>>>>>> response[${opt.method}] >>>>>>>>>>>>>\n${raw}`);
         this.socket.write(raw);
         this.outBytes += raw.length;
         if (opt.body) {
@@ -303,8 +303,7 @@ class RTSPSession extends event.EventEmitter {
      * @param {RTSPRequest} req 
      */
     async handleRequest(req) {
-        console.log(`<<<<<<<<<<< request[${req.method}] <<<<<<<<<<<<<`);
-        console.log(req.raw);
+        logger.info(`<<<<<<<<<<< request[${req.method}] <<<<<<<<<<<<<\n${req.raw}`);
         var res = {
             method: req.method,
             headers: {
@@ -366,7 +365,7 @@ class RTSPSession extends event.EventEmitter {
                                 this.inBytes += buf.length;
                                 this.broadcastAudio(buf);
                             }).on('error', err => {
-                                console.log(err);
+                                logger.error(err);
                             })
                             await this.bindUDPPort(this.aRTPServerSocket, this.aRTPServerPort);
                             this.aRTPControlServerPort = await getPort();
@@ -375,7 +374,7 @@ class RTSPSession extends event.EventEmitter {
                                 this.inBytes += buf.length;
                                 this.broadcastAudioControl(buf);
                             }).on('error', err => {
-                                console.log(err);
+                                logger.error(err);
                             })
                             await this.bindUDPPort(this.aRTPControlServerSocket, this.aRTPControlServerPort);
                             ts = ts.split(';');
@@ -405,7 +404,7 @@ class RTSPSession extends event.EventEmitter {
                                 this.inBytes += buf.length;
                                 this.broadcastVideo(buf);
                             }).on('error', err => {
-                                console.log(err);
+                                logger.error(err);
                             })
                             await this.bindUDPPort(this.vRTPServerSocket, this.vRTPServerPort);
                             this.vRTPControlServerPort = await getPort();
@@ -483,9 +482,10 @@ class RTSPSession extends event.EventEmitter {
     }
 
     checkNoConnection() {
-        console.log('checkNoConnection: ' + this.path);
         var session = this.server.sessions[this.path];
-        if (!session || Object.keys(session.playSessions).length == 0) {
+        var stop = !session || Object.keys(session.playSessions).length == 0;
+        logger.info('checkNoConnection: path=' + this.path + ', stop=' + stop);
+        if (stop) {
             if(session) {
                 this.stop();
             }
@@ -513,7 +513,7 @@ class RTSPSession extends event.EventEmitter {
         this.vRTPControlserverSokcet && this.vRTPControlserverSokcet.close();
 
         this.socket.destroy();
-        console.log(`end: rtsp session[type=${this.type}, path=${this.path}, sid=${this.sid}]`);
+        logger.info(`end: rtsp session[type=${this.type}, path=${this.path}, sid=${this.sid}]`);
     }
 
     sendGOPCache() {

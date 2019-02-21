@@ -9,6 +9,7 @@ const https = require('https');
 const utils = require('utils');
 const ip = require('@penggy/internal-ip');
 const events = require('events');
+const logger = require('./utils/logger');
 
 class HTTPServer extends events.EventEmitter {
 
@@ -62,7 +63,7 @@ class HTTPServer extends events.EventEmitter {
                     fs.removeSync(_file.path);
                 }
             }
-            console.log(e);
+            logger.error(e);
             if(res.headersSent) {
                 return next();
             }
@@ -98,7 +99,7 @@ class HTTPServer extends events.EventEmitter {
             var host = await ip.v4();
             var env = process.env.NODE_ENV || "development";
             var protocol = cfg.tls ? 'https': 'http';
-            console.log(`EasyDarwin http server listening on ${protocol}://${host}:${this.port} in ${env} mode`);
+            logger.info(`EasyDarwin http server listening on ${protocol}://${host}:${this.port} in ${env} mode`);
         })
     }
 }

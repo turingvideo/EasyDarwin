@@ -33,6 +33,8 @@
     "sdp-transform": "2.4.0",
     "shortid": "2.2.8",
     "urlsafe-base64": "1.0.0",
+    "winson": "^1.0.0",
+    "winston": "^3.2.1",
     "ws": "5.1.0"
   },
   "nodemonConfig": {
