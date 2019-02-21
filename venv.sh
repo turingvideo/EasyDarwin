@@ -1,5 +1,6 @@
 #!/bin/bash
-CWD=$(cd "$(dirname $0)";pwd)
+# Usage: source venv.sh
+CWD=$(cd "$(dirname $1)";pwd)
 
 export NODE_PATH=${CWD}
 export PATH=${CWD}/node_modules/.bin:${PATH}
