@@ -95,11 +95,9 @@ class RTSPSession extends event.EventEmitter {
         }).on("close", () => {
             this.stop();
         }).on("error", err => {
-            this.stopped = true;
             this.socket.destroy();
             logger.error(err);
         }).on("timeout", () => {
-            this.stopped = true;
             this.socket.end();
         })
     }
