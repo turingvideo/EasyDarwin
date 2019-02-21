@@ -16,8 +16,6 @@ const cfg = {
     secret_key: '/home/ubuntu/EasyDarwin/environment.json'
 };
 
-cfg.tls = null
-
 if(cfg.tls) {
     cfg.tls.key = fs.readFileSync(cfg.tls.key);
     cfg.tls.cert = fs.readFileSync(cfg.tls.cert);
