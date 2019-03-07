@@ -34,7 +34,9 @@ class RTSPSession extends event.EventEmitter {
         this.playSessions = {};
         this.transType = 'tcp';
 
+        // checkConnection
         this.checkConnection = null;
+        this.checkConnectionInterval = 30000;
 
         //-- tcp trans params
         this.aRTPChannel = 0;
@@ -256,6 +258,9 @@ class RTSPSession extends event.EventEmitter {
     }
 
     authenticate(method, cur_url) {
+        if(!cfg.enableAuthentication) {
+           return '100';
+        }
         var uri = cur_url.split("?");
         var raw_uri = uri[0];
         var param_list = uri[1].split("&");
@@ -328,12 +333,11 @@ class RTSPSession extends event.EventEmitter {
                     break;
                 }
 
-                var pushSession = this.server.sessions[this.path];
+                /*var pushSession = this.server.sessions[this.path];
                 if (pushSession) {
                     res.code = 406;
                     res.msg = 'Not Acceptable';
-                }
-                this.checkConnection = setInterval(this.checkNoConnection.bind(this), 30000);
+                }*/
                 break;
             case 'SETUP':
                 var ts = req['Transport'] || "";
@@ -471,7 +475,7 @@ class RTSPSession extends event.EventEmitter {
                 break;
             case 'RECORD':
                 process.nextTick(() => {
-                    this.server.sessions[this.path] = this;
+                    this.startPusher();
                 })
                 break;
             case 'TEARDOWN':
@@ -480,6 +484,16 @@ class RTSPSession extends event.EventEmitter {
                 return;
         }
         this.makeResponseAndSend(res);
+    }
+
+    startPusher() {
+        var pusherSession = this.server.sessions[this.path];
+        if(pusherSession && pusherSession !== this) {
+            logger.info(`override existing session: [type=${this.type}, path=${this.path}, sid=${this.sid}]`);
+            pusherSession.stop();
+        }
+        this.server.sessions[this.path] = this;
+        this.checkConnection = setInterval(this.checkNoConnection.bind(this), this.checkConnectionInterval);
     }
 
     checkNoConnection() {
@@ -521,7 +535,7 @@ class RTSPSession extends event.EventEmitter {
         this.vRTPControlserverSokcet && this.vRTPControlserverSokcet.close();
 
         this.socket.destroy();
-        logger.info(`end: rtsp session[type=${this.type}, path=${this.path}, sid=${this.sid}]`);
+        logger.info(`stopped: rtsp session[type=${this.type}, path=${this.path}, sid=${this.sid}]`);
     }
 
     sendGOPCache() {

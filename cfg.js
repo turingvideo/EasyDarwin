@@ -2,6 +2,8 @@ const path = require("path");
 const os = require("os");
 const fs = require('fs');
 
+const where = 'local';
+
 const cfg = {
     http_port: 10008,
     rtsp_tcp_port: 8554,
@@ -13,8 +15,14 @@ const cfg = {
         key: '/home/ubuntu/ssl/turingvideo.key',
         cert: '/home/ubuntu/ssl/STAR_turingvideo_com.bundle'
     },
-    secret_key: '/home/ubuntu/EasyDarwin/environment.json'
+    secret_key: '/home/ubuntu/EasyDarwin/environment.json',
+    enableAuthentication: true
 };
+
+if(where === 'local') {
+    cfg.tls = null;
+    cfg.enableAuthentication = false;
+}
 
 if(cfg.tls) {
     cfg.tls.key = fs.readFileSync(cfg.tls.key);
