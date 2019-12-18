@@ -7,4 +7,4 @@ chmod +x "${CWD}/node_modules/.bin/node"
 chmod +x "${CWD}/node_modules/.bin/pm2"
 
 pm2 start pm2.config.js
-pm2 log EasyDarwin --raw --lines 5 --nostream
+pm2 log EasyDarwin --raw
